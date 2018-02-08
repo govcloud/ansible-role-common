@@ -3,6 +3,7 @@ services: docker
 
 env:
   # Defaults.
+	- distro: centos7
   - distro: ubuntu1604
 
 script:
