@@ -13,35 +13,40 @@
     - skip_ansible_lint
   become: yes
   # core.autocrlf=input prevents https://github.com/robbyrussell/oh-my-zsh/issues/4402
-  command: 'git clone -c core.autocrlf=input --depth=1 https://github.com/robbyrussell/oh-my-zsh.git ~{{ item.username }}/.oh-my-zsh'
+  command: 'git clone -c core.autocrlf=input --depth=1 https://github.com/robbyrussell/oh-my-zsh.git /etc/.oh-my-zsh'
   args:
-    creates: '~{{ item.username }}/.oh-my-zsh'
-  with_items: '{{ users }}'
+    creates: '/etc/.oh-my-zsh'
 
 - name: set ownership and permissions of oh-my-zsh for users
   become: yes
   file:
-    path: '~{{ item.username }}/.oh-my-zsh'
-    owner: '{{ item.username }}'
-    group: "{{ (ansible_os_family == 'Suse') | ternary('users', item.username) }}"
+    path: '/etc/.oh-my-zsh'
+    owner: 'root'
+    group: "root"
     mode: 'go-w'
     recurse: yes
-  with_items: '{{ users }}'
 
-- name: set default shell for users
+- name: set zsh cache dir
   become: yes
-  user:
-    name: '{{ item.username }}'
-    shell: /bin/zsh
-  with_items: '{{ users }}'
+  command: "mkdir -p /etc/skel/.oh-my-zsh/cache"
 
 - name: write .zshrc for users
   become: yes
   template:
     src: zshrc.j2
-    dest: '~{{ item.username }}/.zshrc'
+    dest: '/etc/skel/.zshrc'
     backup: yes
-    owner: '{{ item.username }}'
-    group: "{{ (ansible_os_family == 'Suse') | ternary('users', item.username) }}"
+    owner: 'root'
+    group: "root"
     mode: 'u=rw,go=r'
   with_items: '{{ users }}'
+
+- name: set default shell to zsh
+  become: yes
+  template:
+    src: useradd.j2
+    dest: '/etc/default/useradd'
+    backup: yes
+    owner: 'root'
+    group: "root"
+    mode: 'u=rw,go=r'
